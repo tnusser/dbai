@@ -1,0 +1,17 @@
+Assignment 03 - Nusser und Baeuerle
+
+Overall Status. 
+
+We finished both exercise. We set up the Buffer-Manager by implementing an array and an array hash-map. The array contains the page objects, while the hash-map entails the page-id and its corresponding position in the array. The components have then been implemented according to the assignments description. 
+
+For the second task we chose to use a linked list for both MRU and LRU. The functionalities of the corresponding policies have then been implemented according to the assignments. Since the clock:second chance policy is a bit different (No shuffeling of the indexes) and we thus used an array as the basic index structure.
+
+
+
+Time Spent. 
+Approx. 20 hours per person. 
+
+
+As a remark. We hope we incorporated the checkstyle-plugin correctly - We are 95% sure we did. If not, please let us now we will fix it immediatly (In the hope of still getting some points :)).
+
+ 
