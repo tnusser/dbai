@@ -124,7 +124,6 @@ public class BufferManagerTest extends BaseTest {
         for (int index = 0; index < numPages; index++) {
             final Page<?> page = bufferManager.newPage();
             pids[index] = page.getPageID();
-            System.out.println(Arrays.toString(pids));
 
             // Copy the page number + 99999 onto each page. It seems
             // unlikely that this bit pattern would show up there by
@@ -143,7 +142,6 @@ public class BufferManagerTest extends BaseTest {
         for (int index = 0; index < numPages; index++) {
             final PageID pid = pids[index];
             final Page<?> page = bufferManager.pinPage(pid);
-            System.out.println("richtig");
             assertEquals(pid.getValue() + 99999, page.readInt(0));
 
             if (pid.getValue() % 20 == 12) {
