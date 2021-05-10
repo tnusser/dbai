@@ -75,7 +75,7 @@ public class ClockPolicyTest {
 
 
    /**
-    * Test method for {@link minibase.storage.buffer.ClockPolicy#pickVictim()}.
+    * Test method for {@link minibase.storage.buffer.policy.ClockPolicy#pickVictim()}.
     */
    @Test
    public final void testPickSequenceVictim() {

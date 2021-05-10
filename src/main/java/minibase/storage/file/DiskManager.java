@@ -416,7 +416,7 @@ public final class DiskManager implements Closeable {
         final int pageNo = firstID.getValue();
         final int mapPage = pageNo / BITS_PER_PAGE;
         final int mapByte = (pageNo % BITS_PER_PAGE) / Byte.SIZE;
-        if (this.lastAllocPage > mapPage || (this.lastAllocPage == mapPage && this.lastAllocByte > mapByte)) {
+        if (this.lastAllocPage > mapPage || this.lastAllocPage == mapPage && this.lastAllocByte > mapByte) {
             this.lastAllocPage = mapPage;
             this.lastAllocByte = mapByte;
         }

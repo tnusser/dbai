@@ -55,7 +55,7 @@ public class MRUPolicyTest {
    }
 
    /**
-    * Test method for {@link minibase.storage.buffer.LRUPolicy#pickVictim()}.
+    * Test method for {@link minibase.storage.buffer.policy.LRUPolicy#pickVictim()}.
     */
    @Test
    public final void testPickSingleVictim() {
@@ -70,7 +70,7 @@ public class MRUPolicyTest {
    }
 
    /**
-    * Test method for {@link minibase.storage.buffer.LRUPolicy#pickVictim()}.
+    * Test method for {@link minibase.storage.buffer.policy.LRUPolicy#pickVictim()}.
     */
    @Test
    public final void testPickSequenceVictim() {
@@ -101,7 +101,7 @@ public class MRUPolicyTest {
    }
 
    /**
-    * Test method for {@link minibase.storage.buffer.LRUPolicy#pickVictim()}.
+    * Test method for {@link minibase.storage.buffer.policy.LRUPolicy#pickVictim()}.
     */
    @Test
    public final void testPickSequenceVictimAndUseVictim() {

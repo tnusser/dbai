@@ -71,6 +71,11 @@
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>${checkstyle.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -82,7 +87,7 @@
         <!-- Dependency Versions -->
         <maven.version>3.2.0</maven.version>
         <junit.version>4.12</junit.version>
-        <checkstyle.version>8.41.1</checkstyle.version>
+        <checkstyle.version>8.42</checkstyle.version>
         <!-- Maven Plugin Versions -->
         <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>

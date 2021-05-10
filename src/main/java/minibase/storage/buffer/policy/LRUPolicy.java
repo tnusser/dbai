@@ -1,31 +1,45 @@
-/*
- * @(#)LRUPolicy.java   1.0   Oct 11, 2013
- *
- * Copyright (c) 1996-1997 University of Wisconsin.
- * Copyright (c) 2006 Purdue University.
- * Copyright (c) 2013-2021 University of Konstanz.
- *
- * This software is the proprietary information of the above-mentioned institutions.
- * Use is subject to license terms. Please refer to the included copyright notice.
- */
 package minibase.storage.buffer.policy;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * Implementation of the Least-Recently-Used Replacement Policy.
+ *
+ * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
+ * @author Johann Bornholdt &lt;johann.bornholdt@uni-konstanz.de&gt;
+ */
 public class LRUPolicy implements ReplacementPolicy {
 
+    /** Queue of currently unpinned buffers. */
+    private final Deque<Integer> queue;
+
+    /**
+     * Constructs a LRU policy managing the given number of buffers.
+     *
+     * @param numBuffers number of buffers to manage, all assumed to be free at the beginning
+     */
     public LRUPolicy(final int numBuffers) {
-        // TODO implement constructor
-        throw new UnsupportedOperationException("Not yet implemented.");
+        // we don't add buffers initially because free ones are managed by the buffer manager
+        this.queue = new ArrayDeque<>();
     }
 
     @Override
     public void stateChanged(final int pos, final PageState newState) {
-        // TODO implement method
-        throw new UnsupportedOperationException("Not yet implemented.");
+        switch (newState) {
+            case PINNED:
+                // no duplicates, so we can stop after the first hit
+                this.queue.removeFirstOccurrence(pos);
+                break;
+            case UNPINNED:
+                this.queue.add(pos);
+                break;
+            default:
+        }
     }
 
     @Override
     public int pickVictim() {
-        // TODO implement method
-        throw new UnsupportedOperationException("Not yet implemented.");
+        return this.queue.isEmpty() ? -1 : this.queue.peek();
     }
 }

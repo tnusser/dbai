@@ -178,6 +178,9 @@ public class BufferManagerTest extends BaseTest {
                 () -> bufferManager.pinPage(pageID));
     }
 
+    /**
+     * Tests the handling of dirty pages.
+     */
     @Test
     public void dirtyPages() {
         final BufferManager bufferManager = this.getBufferManager();
@@ -220,6 +223,9 @@ public class BufferManagerTest extends BaseTest {
         }
     }
 
+    /**
+     * Tests that contents of a dirty page are flushed back to disk.
+     */
     @Test
     public void dirtyPage() {
         final BufferManager bufferManager = this.getBufferManager();
