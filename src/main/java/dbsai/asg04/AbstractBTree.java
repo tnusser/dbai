@@ -359,7 +359,7 @@ abstract class AbstractBTree {
         for (int i = 0; i < indent; i++) {
             sb.append("  ");
         }
-
+        sb.append("Size " + node.getSize() + " ");
         if (node.isLeaf()) {
             sb.append("Leaf(").append(nodeID).append(")[");
             for (int i = 0; i < node.getSize(); i++) {
