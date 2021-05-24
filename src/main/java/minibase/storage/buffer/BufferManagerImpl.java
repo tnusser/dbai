@@ -10,9 +10,7 @@
  */
 package minibase.storage.buffer;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,181 +19,293 @@ import minibase.storage.buffer.policy.ReplacementPolicy.PageState;
 import minibase.storage.file.DiskManager;
 
 /**
- * Sample solution for the buffer manager.
+ * The buffer manager manages the buffer pool, which consists of a collection of slots (so-called frames) that
+ * can hold pages, which have been read into memory. Internally, this buffer pool is represented as an array
+ * of page objects. The buffer manager reads disk pages into a main memory page as needed and evicts pages
+ * from memory that are no longer required, if the buffer pool has no empty slots to hold new pages. The
+ * buffer manager provides the following services.
+ * <ul>
+ * <li>Pinning and unpinning disk pages to and from frames.</li>
+ * <li>Allocating and deallocating sequences of disk pages and coordinating this with the buffer pool.</li>
+ * <li>Reading data from disk into memory pages.</li>
+ * <li>Flushing pages from the buffer pool to disk.</li>
+ * </ul>
+ * The buffer manager is used by access methods, heap files, and relational operators to read, write,
+ * allocate, and deallocate pages.
  *
- * @author Leo Woerteler &lt;leonard.woerteler@uni.kn&gt;
+ * @author Chris Mayfield &lt;mayfiecs@jmu.edu&gt;
+ * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
+ * @version 1.0
  */
 public final class BufferManagerImpl implements BufferManager {
 
     /**
-     * Underlying disk manager.
+     * Actual pool of pages.
      */
-    private final DiskManager diskManager;
+    private final Page<?>[] bufferPool;
 
     /**
-     * Replacement policy for selecting the next page to evict.
+     * Maps current page numbers to frames; used for efficient lookups.
+     */
+    private final Map<PageID, Page<?>> pageMap;
+
+    /**
+     * The replacement policy to use.
      */
     private final ReplacementPolicy replacementPolicy;
 
     /**
-     * Static set of frames the buffer manager maintains.
+     * Reference to the disk manager.
      */
-    private final Page<?>[] pages;
+    private final DiskManager diskManager;
 
     /**
-     * Map from page ID to frame.
+     * Chain of free pages.
      */
-    private final Map<PageID, Page<?>> pageMap = new HashMap<>();
+    private Page<?> freePageChain;
 
     /**
-     * List of free pages for fast access.
-     */
-    private final Deque<Page<?>> freePages = new ArrayDeque<>();
-
-    /**
-     * Constructs a buffer manager with the given configuration.
+     * Constructs a buffer manager with the given settings.
      *
-     * @param diskManager         underlying disk manager, used for disk I/O
-     * @param bufferPoolSize      number of buffer frames to use
-     * @param replacementStrategy strategy for choosing the next page to evict
+     * @param diskManager         reference to disk manager
+     * @param bufferPoolSize      number of buffers in the buffer pool
+     * @param replacementStrategy replacement strategy used by this buffer manager
      */
     public BufferManagerImpl(final DiskManager diskManager, final int bufferPoolSize,
                              final ReplacementStrategy replacementStrategy) {
         this.diskManager = diskManager;
-        this.replacementPolicy = replacementStrategy.newInstance(bufferPoolSize);
-        this.pages = new Page<?>[bufferPoolSize];
+
+        // initialize the buffer pool and frame table
+        this.bufferPool = new Page[bufferPoolSize];
+        Page<?> free = null;
         for (int i = 0; i < bufferPoolSize; i++) {
             final Page<?> page = new Page<>(i);
-            this.pages[i] = page;
-            this.freePages.add(page);
+            this.bufferPool[i] = page;
+            free = page.setNextFree(free);
         }
+        this.freePageChain = free;
+
+        // initialize the specialized page map and replacer
+        this.pageMap = new HashMap<>(bufferPoolSize);
+        this.replacementPolicy = replacementStrategy.newInstance(bufferPoolSize);
     }
 
-    @Override
+    /**
+     * Returns the disk manager used by this buffer manager.
+     *
+     * @return the underlying disk manager
+     */
     public DiskManager getDiskManager() {
         return this.diskManager;
     }
 
     /**
-     * Tries to find a buffer page to load a disk block into. If another page must be evicted first,
-     * it is written back to disk.
+     * Allocates a new page, pins it and fills the page contents with zeroes.
      *
-     * @return free buffer page
-     * @throws IllegalStateException if all pages in the buffer pool are pinned
+     * @return the pinned page
+     * @throws IllegalStateException if all pages are pinned (i.e. pool exceeded)
      */
-    private Page<?> getBufferPage() {
-        final Page<?> page;
-        if (!this.freePages.isEmpty()) {
-            page = this.freePages.poll();
-        } else {
-            final int evict = this.replacementPolicy.pickVictim();
-            if (evict < 0) {
-                throw new IllegalStateException("Buffer pool is full.");
-            }
-            page = this.pages[evict];
-            this.pageMap.remove(page.getPageID());
-            this.flushPage(page);
-        }
+    public Page<?> newPage() {
+        final PageID pageID = this.diskManager.allocatePage();
+        final Page<?> page = this.pinPage(pageID, false);
+        Arrays.fill(page.getData(), (byte) 0);
         return page;
     }
 
-    @Override
-    public Page<?> newPage() {
-        final Page<?> page = this.getBufferPage();
-        page.reset(this.diskManager.allocatePage());
-        Arrays.fill(page.getData(), (byte) 0);
-        page.setDirty(true);
+    /**
+     * Allocates a new page and sets its contents to be identical to the given page's contents.
+     *
+     * @param <T>        page type of the page to copy
+     * @param pageToCopy page that should be copied
+     * @return newly allocated copy of the given page
+     * @throws IllegalStateException if the buffer pool is completely filled with pinned pages
+     */
+    public <T extends PageType> Page<T> copyPage(final Page<T> pageToCopy) {
+        @SuppressWarnings("unchecked")
+        final Page<T> copy = (Page<T>) this.pinPage(this.diskManager.allocatePage(), false);
+        System.arraycopy(pageToCopy.getData(), 0, copy.getData(), 0, DiskManager.PAGE_SIZE);
+        return copy;
+    }
+
+    /**
+     * Deallocates a single page from disk, freeing it from the pool, if needed. The page must be pinned
+     * exactly once.
+     *
+     * @param page the page to free
+     * @throws IllegalArgumentException if the page is pinned more of less than one time
+     */
+    public void freePage(final Page<?> page) {
+        // first check the page state
+        if (page.getPinCount() < 1) {
+            throw new IllegalArgumentException("Page is not pinned.");
+        } else if (page.getPinCount() > 1) {
+            throw new IllegalArgumentException("Page " + page.getPageID() + " is pinned more than once.");
+        }
+        // remove the page from the buffer pool
+        this.pageMap.remove(page.getPageID());
+        // deallocate the page from disk
+        this.diskManager.deallocatePage(page.getPageID());
+        page.reset(PageID.INVALID);
+        this.freePageChain = page.setNextFree(this.freePageChain);
+        // notify the replacer
+        this.replacementPolicy.stateChanged(page.getIndex(), PageState.FREE);
+    }
+
+    /**
+     * Pins a disk page into the buffer pool. If the page is already pinned, this simply increments the pin
+     * count. Otherwise, this method selects an empty slot (frame) and reads the page from disk into the buffer
+     * pool. If there are no empty slots, the replacement policy of the buffer manager is used to select a
+     * victim page. The victim page is then evicted from the buffer pool, flushing it to disk if it is dirty
+     * and the new page is loaded into its frame. Finally, the buffer containing the new page is returned.
+     *
+     * @param pageID identifies the page to pin
+     * @param <T>    type of the pinned page (not checked)
+     * @return buffer holding the page contents
+     * @throws IllegalStateException if the buffer pool is completely filled with pinned pages
+     */
+    public <T extends PageType> Page<T> pinPage(final PageID pageID) {
+        return this.pinPage(pageID, true);
+    }
+
+    /**
+     * Pins a disk page into the buffer pool. If the page is already pinned, this simply increments the pin
+     * count. Otherwise, this method selects an empty slot (frame) and reads the page from disk into the buffer
+     * pool. If there are no empty slots, the replacement policy of the buffer manager is used to select a
+     * victim page. The victim page is then evicted from the buffer pool, flushing it to disk if it is dirty.
+     * If requested, the new page contents are then read from disk. Finally, the buffer containing the new page
+     * is returned.
+     *
+     * @param pageID       identifies the page to pin
+     * @param readFromDisk if the contents should be read from disk
+     * @param <T>          type of the pinned page (not checked)
+     * @return buffer holding the page contents
+     * @throws IllegalStateException if the buffer pool is completely filled with pinned pages
+     */
+    @SuppressWarnings("unchecked")
+    <T extends PageType> Page<T> pinPage(final PageID pageID, final boolean readFromDisk) {
+        // first check if the page is already pinned
+        if (this.pageMap.containsKey(pageID)) {
+            final Page<T> page = (Page<T>) this.pageMap.get(pageID);
+
+            // increment the pin count, notify the replacer, and return the buffer
+            page.incrementPinCount();
+            if (page.getPinCount() == 1) {
+                this.replacementPolicy.stateChanged(page.getIndex(), PageState.PINNED);
+            }
+            return page;
+        }
+
+        final Page<T> page;
+        if (this.freePageChain != null) {
+            // take the free page first
+            page = (Page<T>) this.freePageChain;
+            this.freePageChain = page.getAndResetNextFree();
+        } else {
+            // select an available frame
+            final int victim = this.replacementPolicy.pickVictim();
+            if (victim < 0) {
+                throw new IllegalStateException("Buffer pool exceeded");
+            }
+            page = (Page<T>) this.bufferPool[victim];
+
+            // if the frame was in use and dirty, write it to disk
+            this.pageMap.remove(page.getPageID());
+            if (page.isDirty()) {
+                this.diskManager.writePage(page.getPageID(), page.getData());
+            }
+        }
+
+        // read in the page if requested
+        page.reset(pageID);
+        if (readFromDisk) {
+            this.diskManager.readPage(pageID, page.getData());
+        }
+
+        // update the page map and notify the replacer
+        this.pageMap.put(pageID, page);
         page.incrementPinCount();
-        this.pageMap.put(page.getPageID(), page);
         this.replacementPolicy.stateChanged(page.getIndex(), PageState.PINNED);
         return page;
     }
 
-    @Override
-    public void freePage(final Page<?> page) {
-        final PageID pageID = page.getPageID();
-        if (page.getPinCount() != 1) {
-            throw new IllegalArgumentException("Wrong pin count for Page#" + pageID + ": " + page.getPinCount());
-        }
-        this.pageMap.remove(pageID);
-        page.reset(PageID.INVALID);
-        this.diskManager.deallocatePage(pageID);
-        this.replacementPolicy.stateChanged(page.getIndex(), PageState.FREE);
-        this.freePages.add(page);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends PageType> Page<T> pinPage(final PageID pageID) {
-        if (!pageID.isValid()) {
-            throw new IllegalArgumentException("Invalid PageID.");
-        }
-
-        final Page<?> page;
-        if (this.pageMap.containsKey(pageID)) {
-            page = this.pageMap.get(pageID);
-        } else {
-            page = this.getBufferPage();
-            page.reset(pageID);
-            this.diskManager.readPage(pageID, page.getData());
-            this.pageMap.put(pageID, page);
-            this.replacementPolicy.stateChanged(page.getIndex(), PageState.PINNED);
-        }
-        page.incrementPinCount();
-        return (Page<T>) page;
-    }
-
-    @Override
+    /**
+     * Unpins a disk page from the buffer pool, decreasing its pin count.
+     *
+     * @param page page to unpin
+     * @param mode {@link UnpinMode#DIRTY} if the page was modified, {@link UnpinMode#CLEAN} otherwise
+     * @throws IllegalArgumentException if the page is not present or not pinned
+     */
     public void unpinPage(final Page<?> page, final UnpinMode mode) {
-        final int pinCount = page.getPinCount();
-        if (pinCount < 1) {
-            throw new IllegalArgumentException("Page #" + page.getPageID() + " is not pinned.");
+        // check the page state
+        if (page.getPinCount() == 0) {
+            throw new IllegalArgumentException("Page not pinned");
         }
-
+        // update the page
         page.decrementPinCount();
         if (mode == UnpinMode.DIRTY) {
             page.setDirty(true);
         }
-
-        if (pinCount == 1) {
+        // notify the replacer
+        if (page.getPinCount() == 0) {
             this.replacementPolicy.stateChanged(page.getIndex(), PageState.UNPINNED);
         }
     }
 
-    @Override
+    /**
+     * Immediately writes a page in the buffer pool to disk, if dirty. Note that flushing a page only writes
+     * that page to disk, i.e., the page will not be unpinned, freed, etc.
+     *
+     * @param page page to be flushed
+     */
     public void flushPage(final Page<?> page) {
         if (page.isDirty()) {
             // write the page to disk
-            this.getDiskManager().writePage(page.getPageID(), page.getData());
+            this.diskManager.writePage(page.getPageID(), page.getData());
             // the buffer page is now clean
             page.setDirty(false);
         }
     }
 
-    @Override
+    /**
+     * Immediately writes all dirty pages in the buffer pool to disk. Note that flushing a page only writes
+     * that page to disk, i.e., the page will not be unpinned, freed, etc.
+     */
     public void flushAllPages() {
-        for (final Page<?> buffered : this.pageMap.values()) {
-            this.flushPage(buffered);
+        // iterate the buffer pool
+        for (final Page<?> page : this.pageMap.values()) {
+            this.flushPage(page);
         }
     }
 
-    @Override
+    /**
+     * Returns the total number of buffer frames.
+     *
+     * @return total number of buffer frames
+     */
     public int getNumBuffers() {
-        return this.pages.length;
+        return this.bufferPool.length;
     }
 
-    @Override
+    /**
+     * Returns the total number of pinned buffer frames.
+     *
+     * @return total number of pinned buffer frames
+     */
     public int getNumPinned() {
-        int pinned = 0;
-        for (final Page<?> buffered : this.pageMap.values()) {
-            if (buffered.getPinCount() > 0) {
-                pinned++;
+        int count = 0;
+        for (final Page<?> page : this.pageMap.values()) {
+            if (page.getPinCount() > 0) {
+                count++;
             }
         }
-        return pinned;
+        return count;
     }
 
-    @Override
+    /**
+     * Returns the total number of unpinned buffer frames.
+     *
+     * @return total number of unpinned buffer frames
+     */
     public int getNumUnpinned() {
         return this.getNumBuffers() - this.getNumPinned();
     }

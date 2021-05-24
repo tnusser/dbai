@@ -1,16 +1,7 @@
 package dbsai.asg04;
 
-/**
- * #TODO add comment.
- *
- * @author #TODO authors
- */
 public final class BTree extends AbstractBTree {
 
-    /**
-     * Creates a new B+-Tree with the given branching factor.
-     * @param d branching factor
-     */
     public BTree(final int d) {
         super(d);
     }

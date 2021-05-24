@@ -149,7 +149,7 @@ public final class Minibase implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         this.flush();
         this.bufferManager.getDiskManager().close();
     }

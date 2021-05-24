@@ -8,6 +8,7 @@ import java.util.BitSet;
 import java.util.Random;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -17,7 +18,7 @@ import org.junit.Test;
  * without failures does not guarantee a good grade. Testing your solution is part of
  * this exercise.
  *
- * @author Leo Woerteler &lt;leonard.woerteler@uni.kn&gt;
+ * @author Leo Woerteler, DBIS, University of Konstanz
  */
 public final class BTreeTest {
     /**
@@ -36,13 +37,14 @@ public final class BTreeTest {
     @Before
     public void buildUp() {
         // TODO you can experiment with the node size and/or write additional test methods
-        this.tree = new BTree(4);
+        this.tree = new BTreeGroup99(4);
         this.cmp.clear();
     }
 
     /**
      * Checks if after inserting and removing 10 million values the tree is empty again.
      */
+    @Ignore
     @Test
     public void testFillEmpty() {
         final Random rng = new Random(42);

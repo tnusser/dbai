@@ -10,15 +10,15 @@
  */
 package minibase.storage.file;
 
+import minibase.Minibase;
+import minibase.storage.buffer.PageID;
+import minibase.util.Convert;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-
-import minibase.Minibase;
-import minibase.storage.buffer.PageID;
-import minibase.util.Convert;
 
 /**
  * The disk manager is the component of Minibase that takes care of the allocation and deallocation of pages
@@ -34,18 +34,15 @@ public final class DiskManager implements Closeable {
     /**
      * Size of a page, in bytes.
      */
-    public static final int PAGE_SIZE = 1 << 10;
-
+    public static final int PAGE_SIZE = 1 << 7;
+    /**
+     * Maximum size of a name (i.e. of files or attributes).
+     */
+    public static final int NAME_MAXLEN = 50;
     /**
      * Page number of the first page in a database file.
      */
     private static final int FIRST_PAGE_NO = 0;
-
-    /**
-     * Maximum size of a name (i.e. of files or attributes).
-     */
-    static final int NAME_MAXLEN = 50;
-
     /**
      * Block number of the first map page.
      */
@@ -95,37 +92,30 @@ public final class DiskManager implements Closeable {
      * Offset for the total number of pages.
      */
     private static final int FIRST_PAGE_NUM_DB_PAGES = DiskManager.PAGE_SIZE - 4;
-
-    /**
-     * Actual reference to the Minibase file.
-     */
-    private DiskFile diskFile;
-
     /**
      * Database file size, in pages.
      */
     private final long numMapPages;
-
     /**
      * Buffer for header pages.
      */
     private final byte[][] buffer;
-
-    /**
-     * Stores, where the last page was allocated.
-     */
-    private int lastAllocPage;
-
-    /**
-     * Stores, where the last page was allocated.
-     */
-    private int lastAllocByte;
-
     /**
      * Page numbers of the pages in the buffer, the most significant bit is used as dirty flag.
      */
     private final int[] pageNrs;
-
+    /**
+     * Actual reference to the Minibase file.
+     */
+    private DiskFile diskFile;
+    /**
+     * Stores, where the last page was allocated.
+     */
+    private int lastAllocPage;
+    /**
+     * Stores, where the last page was allocated.
+     */
+    private int lastAllocByte;
     /**
      * Number of pages in the buffer.
      */
@@ -475,7 +465,7 @@ public final class DiskManager implements Closeable {
      * @param startPageID page ID of the file's first page
      * @throws IllegalArgumentException if fileName or startPageID is invalid
      */
-    void addFileEntry(final String fileName, final PageID startPageID) {
+    public void addFileEntry(final String fileName, final PageID startPageID) {
 
         // validate the arguments
         if (fileName.length() > DiskManager.NAME_MAXLEN) {
@@ -529,7 +519,7 @@ public final class DiskManager implements Closeable {
      * @param fileName file name
      * @throws IllegalArgumentException if fileName is invalid
      */
-    void deleteFileEntry(final String fileName) {
+    public void deleteFileEntry(final String fileName) {
         // search the header pages for the entry slot
         int nextHeaderNo = 0;
         do {
@@ -558,7 +548,7 @@ public final class DiskManager implements Closeable {
      * @param fileName file name
      * @return PageID of the file's first page, or {@code null} if the file doesn't exist
      */
-    PageID getFileEntry(final String fileName) {
+    public PageID getFileEntry(final String fileName) {
         // search the header pages for the entry slot
         int nextHeaderNo = 0;
         do {

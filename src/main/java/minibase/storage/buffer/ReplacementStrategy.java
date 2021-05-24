@@ -10,11 +10,7 @@
  */
 package minibase.storage.buffer;
 
-import minibase.storage.buffer.policy.ClockPolicy;
-import minibase.storage.buffer.policy.LRUPolicy;
-import minibase.storage.buffer.policy.MRUPolicy;
-import minibase.storage.buffer.policy.RandomPolicy;
-import minibase.storage.buffer.policy.ReplacementPolicy;
+import minibase.storage.buffer.policy.*;
 
 /**
  * Enumeration of the different buffer replacement policies supported by this factory.

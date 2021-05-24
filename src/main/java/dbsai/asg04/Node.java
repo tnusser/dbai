@@ -5,7 +5,7 @@ import java.util.Arrays;
 /**
  * Representation of a B+ Tree node.
  *
- * @author Leo Woerteler &lt;leonard.woerteler@uni.kn&gt;
+ * @author Leo Woerteler, DBIS, University of Konstanz
  */
 final class Node {
     /**

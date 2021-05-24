@@ -10,19 +10,18 @@
  */
 package minibase;
 
-import static org.junit.Assert.assertEquals;
+import minibase.storage.buffer.BufferManager;
+import minibase.storage.buffer.ReplacementStrategy;
+import minibase.storage.file.DiskManager;
+import org.junit.After;
+import org.junit.Before;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.After;
-import org.junit.Before;
-
-import minibase.storage.buffer.BufferManager;
-import minibase.storage.buffer.ReplacementStrategy;
-import minibase.storage.file.DiskManager;
+import static org.junit.Assert.assertEquals;
 
 /**
  * This base class contains common code to each layer's test suite.
@@ -33,20 +32,17 @@ import minibase.storage.file.DiskManager;
 public class BaseTest {
 
     /**
+     * Default buffer pool replacement policy.
+     */
+    public static final ReplacementStrategy BUF_POLICY = ReplacementStrategy.CLOCK;
+    /**
      * Default database size (in pages).
      */
-    protected static final int DB_SIZE = 20000;
-
+    protected static final int DB_SIZE = 200000;
     /**
      * Default buffer pool size (in pages).
      */
     protected static final int BUF_SIZE = 17;
-
-    /**
-     * Default buffer pool replacement policy.
-     */
-    private static final ReplacementStrategy BUF_POLICY = ReplacementStrategy.RANDOM;
-
     /**
      * Initial seed for the random number generator.
      */
@@ -99,20 +95,6 @@ public class BaseTest {
     }
 
     /**
-     * Sets a new minibase instance.
-     *
-     * @param newMinibase new minibase
-     */
-    protected void setMinibase(final Minibase newMinibase) {
-        if (this.minibase != null) {
-            throw new IllegalStateException("unclosed minibase instance");
-        }
-        this.minibase = newMinibase;
-        final BufferManager bufferManager = this.getBufferManager();
-        this.before = new int[]{bufferManager.getDiskManager().getAllocCount(), bufferManager.getNumPinned()};
-    }
-
-    /**
      * Deletes the database files from the disk.
      *
      * @throws IOException if the database file cannot be deleted
@@ -132,8 +114,6 @@ public class BaseTest {
         }
     }
 
-    /* -------------------------------------------------------------------------- */
-
     /**
      * Resets the random generator to the default seed.
      */
@@ -141,6 +121,8 @@ public class BaseTest {
         // use the same seed every time in order to get reproducible tests
         this.random.setSeed(INIT_SEED);
     }
+
+    /* -------------------------------------------------------------------------- */
 
     /**
      * Gets the random number generator.
@@ -251,6 +233,20 @@ public class BaseTest {
      */
     protected final Minibase getMinibase() {
         return this.minibase;
+    }
+
+    /**
+     * Sets a new minibase instance.
+     *
+     * @param newMinibase new minibase
+     */
+    protected void setMinibase(final Minibase newMinibase) {
+        if (this.minibase != null) {
+            throw new IllegalStateException("unclosed minibase instance");
+        }
+        this.minibase = newMinibase;
+        final BufferManager bufferManager = this.getBufferManager();
+        this.before = new int[]{bufferManager.getDiskManager().getAllocCount(), bufferManager.getNumPinned()};
     }
 
     /**

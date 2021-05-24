@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (c) 2013-2021 University of Konstanz. All Rights Reserved.
   
@@ -9,9 +8,8 @@
   Checkstyle-Configuration: Minibase Checkstyle Configuration (local)
   Description: Checkstyle configuration for Minibase source code.
 -->
-<!DOCTYPE module PUBLIC
-        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
-        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 <module name="Checker">
     <property name="severity" value="error"/>
     <module name="RegexpHeader">
@@ -58,7 +56,7 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
-        <module name="AvoidStarImport"/>
+<!--        <module name="AvoidStarImport"/>-->
         <module name="AvoidStaticImport">
             <property name="excludes" value="org.junit.Assert.*"/>
         </module>
@@ -71,16 +69,21 @@
             <property name="authorFormat" value=".* .*"/>
         </module>
         <module name="JavadocMethod">
-            <property name="accessModifiers" value="public, protected, package"/>
+            <property name="severity" value="warning"/>
+            <property name="accessModifiers" value="public,protected,package"/>
+<!--          <property name="allowUndeclaredRTE" value="true" /> -->
+<!--          <property name="allowThrowsTagsForSubclasses" value="true" /> -->
         </module>
-        <module name="MissingJavadocMethod">
-            <property name="allowMissingPropertyJavadoc" value="true" />
-        </module>
+        <!--       <module name="MissingJavadocMethod"> -->
+        <!--             <property name="allowMissingPropertyJavadoc" value="true" /> -->
+        <!--       </module> -->
         <module name="JavadocVariable">
             <property name="severity" value="warning"/>
+            <property name="scope" value="private"/>
         </module>
         <module name="JavadocStyle">
             <property name="severity" value="warning"/>
+            <property name="scope" value="private"/>
         </module>
         <module name="ConstantName"/>
         <module name="LocalFinalVariableName">
@@ -142,13 +145,13 @@
         <module name="ModifiedControlVariable"/>
         <module name="MultipleVariableDeclarations"/>
         <module name="SuperFinalize"/>
-        <module name="ImportOrder">
-            <property name="severity" value="warning"/>
-            <property name="groups" value="java, javax, junit, com, edu, org, ch, kn.uni, minibase"/>
-            <property name="ordered" value="true"/>
-            <property name="separated" value="true"/>
-            <property name="option" value="top"/>
-        </module>
+<!--        <module name="ImportOrder">-->
+<!--            <property name="severity" value="warning"/>-->
+<!--            <property name="groups" value="java, javax, junit, com, edu, org, ch, kn.uni, minibase"/>-->
+<!--            <property name="ordered" value="true"/>-->
+<!--            <property name="separated" value="true"/>-->
+<!--            <property name="option" value="top"/>-->
+<!--        </module>-->
         <module name="FinalClass">
             <property name="severity" value="warning"/>
         </module>

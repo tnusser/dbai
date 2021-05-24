@@ -10,6 +10,7 @@
  */
 package minibase.storage.buffer;
 
+import minibase.RecordID;
 import minibase.storage.file.DiskManager;
 import minibase.util.Convert;
 
@@ -52,6 +53,10 @@ public final class Page<T extends PageType> {
      * Dirty status of this page.
      */
     private boolean dirty = false;
+    /**
+     * Reference to the next page in the free-pages chain of the buffer manager.
+     */
+    private Page<?> next;
 
     /**
      * Constructor.
@@ -204,6 +209,26 @@ public final class Page<T extends PageType> {
     }
 
     /**
+     * Gets a record ID at the given offset in this page.
+     *
+     * @param offset read offset
+     * @return the record ID
+     */
+    public RecordID readRecordID(final int offset) {
+        return new RecordID(this.data, offset);
+    }
+
+    /**
+     * Sets a record ID at the given position on the page.
+     *
+     * @param offset write offset
+     * @param value  record ID to write
+     */
+    public void writeRecordID(final int offset, final RecordID value) {
+        value.writeData(this.data, offset);
+    }
+
+    /**
      * Gets the index of this page in the buffer pool.
      *
      * @return index of this page in the buffer pool
@@ -263,6 +288,32 @@ public final class Page<T extends PageType> {
         this.pageID = pageID;
         this.pinCount = 0;
         this.dirty = false;
+    }
+
+    /**
+     * Sets the next page in the chain of free pages of the buffer manager.
+     *
+     * @param nextFreePage new next page
+     * @return self reference {@code this} for convenience
+     * @throws IllegalStateException if the reference to the next page is already non-{@code null}
+     */
+    Page<?> setNextFree(final Page<?> nextFreePage) {
+        if (this.next != null) {
+            throw new IllegalStateException("Cannot overwrite existing next free page: " + this.next.getIndex());
+        }
+        this.next = nextFreePage;
+        return this;
+    }
+
+    /**
+     * Returns the next page in the chain of free pages of the buffer manager and sets the reference to {@code null}.
+     *
+     * @return next page in the chain
+     */
+    Page<?> getAndResetNextFree() {
+        final Page<?> nxt = this.next;
+        this.next = null;
+        return nxt;
     }
 
     @Override

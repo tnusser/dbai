@@ -1,63 +1,46 @@
+/*
+ * @(#)ClockPolicyGroup99.java   1.0   Aug 2, 2006
+ *
+ * Copyright (c) 1996-1997 University of Wisconsin.
+ * Copyright (c) 2006 Purdue University.
+ * Copyright (c) 2013-2021 University of Konstanz.
+ *
+ * This software is the proprietary information of the above-mentioned institutions.
+ * Use is subject to license terms. Please refer to the included copyright notice.
+ */
 package minibase.storage.buffer.policy;
 
 import java.util.BitSet;
 
-/**
- * Implementation of the Clock/Second-Chance Replacement Policy.
- *
- * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
- * @author Johann Bornholdt &lt;johann.bornholdt@uni-konstanz.de&gt;
- */
 public class ClockPolicy implements ReplacementPolicy {
 
-    /** Cached next victim, {@code -1} if not set. */
-    private int nextVictim;
-
-    /** Number of unpinned pages. */
-    private int numPinned;
-
-    /** Number of available buffers. */
-    private final int numBuffers;
 
     /**
-     * Set of two boolean flags for each buffer.
-     * The "pinned" flags are at even positions, the "visited" flags at odd positions.
+     * Number of available buffers.
+     */
+    private final int numBuffers;
+    /**
+     * flags.
      */
     private final BitSet flags;
-
-    /** The clock's hand. */
+    /**
+     * Next Victim to be evicted.
+     */
+    private int nextVictim;
+    /**
+     * Number of unpinned pages.
+     */
+    private int numPinned;
+    /**
+     * hand.
+     */
     private int hand = 0;
 
-    /**
-     * Constructs a Clock policy managing the given number of buffers.
-     *
-     * @param numBuffers number of buffers to manage, all assumed to be unpinned at the beginning
-     */
     public ClockPolicy(final int numBuffers) {
         this.flags = new BitSet(2 * numBuffers);
         this.numBuffers = numBuffers;
         this.numPinned = 0;
         this.nextVictim = -1;
-    }
-
-    /**
-     * Returns the position of the given buffer's {@code pinned} flag in {@link #flags}.
-     *
-     * @param pos index of the buffer
-     * @return position of the buffer's {@code pinned} flag
-     */
-    private static int pinned(final int pos) {
-        return 2 * pos;
-    }
-
-    /**
-     * Returns the position of the given buffer's {@code visited} flag in {@link #flags}.
-     *
-     * @param pos index of the buffer
-     * @return position of the buffer's {@code visited} flag
-     */
-    private static int extraLife(final int pos) {
-        return 2 * pos + 1;
     }
 
     @Override
@@ -76,21 +59,34 @@ public class ClockPolicy implements ReplacementPolicy {
 
     @Override
     public int pickVictim() {
+        if (nextVictim != -1) {
+            return nextVictim;
+        }
         if (numPinned == numBuffers) {
             return -1;
         }
-        while (nextVictim == -1) {
-            if (this.flags.get(pinned(this.hand))) {
+
+        while (true) {
+            final int pos = this.hand;
+            if (this.flags.get(pinned(pos))) {
                 // pinned page, skip
-            } else if (this.flags.get(extraLife(this.hand))) {
+            } else if (this.flags.get(extraLife(pos))) {
                 // page is referenced
-                this.flags.clear(extraLife(this.hand));
+                this.flags.clear(extraLife(pos));
             } else {
                 // unpinned, unreferenced page
-                nextVictim = this.hand;
+                nextVictim = pos;
+                return pos;
             }
-            this.hand = this.hand == numBuffers - 1 ? 0 : this.hand + 1;
+            this.hand = pos == numBuffers - 1 ? 0 : pos + 1;
         }
-        return nextVictim;
+    }
+
+    private int pinned(final int pos) {
+        return 2 * pos;
+    }
+
+    private int extraLife(final int pos) {
+        return 2 * pos + 1;
     }
 }
