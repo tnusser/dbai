@@ -68,7 +68,6 @@ public final class BTreeGroup99 extends AbstractBTree {
 
             return keyIDPair(right.getKey(0), rightID);
         }
-
         // inner node - look for child in which to insert
         final int pos = Math.abs(search(node, key) + 1);
         final long result = this.insertKey(node.getChildID(pos), key);
