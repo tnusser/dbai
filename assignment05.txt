@@ -1,0 +1,16 @@
+#### Overall Status 
+
+The first exercise, has been completly implemented. Both the search and find methods were relatively easy to implement. 
+
+For the insert and remove method, we basically oriented ourselves on the sampe solution of assignment 04 and tried to adapt it to Minibase. We however did not compleztly succeed in doing so, as the tests will tell you. 
+
+The project is still incomplete since we have an issue in the delete method which we could not fix. Supposively we set a childID wrong in merge child.
+
+#### B-Tree Characteristics 
+
+We implemented, yet not completly due to bugs, all necessary functions of a B-Tree, including Search, Delete and Insert. Additionnally we implemented the following B+-Tree Characteristics: 
+Leafs as a doubly-linked list, Splits for overfull pages while inserting, merges for underfull pages while deleting and redistribution.
+
+#### Time Spent 
+
+approx. 25 hrs per person
