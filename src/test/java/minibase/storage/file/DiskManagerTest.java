@@ -13,7 +13,6 @@ package minibase.storage.file;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import minibase.BaseTest;
@@ -33,7 +32,6 @@ public class DiskManagerTest extends BaseTest {
      * Creates a new database and does some tests.
      */
     @Test
-    @Ignore
     public void test() {
         final DiskManager diskManager = this.getDiskManager();
 

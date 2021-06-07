@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
- * Copyright (c) 2013-2016 University of Konstanz.
+ * Copyright (c) 2013-2021 University of Konstanz.
  *
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
@@ -26,15 +26,96 @@ public final class BTreeIndexImpl extends BTreeIndex {
     /**
      * Constructor for opening an existing index.
      *
-     * @param bufferManager
-     *           the buffer manager
-     * @param name
-     *           name of the index
-     * @param header
-     *           the index's header page
+     * @param bufferManager the buffer manager
+     * @param name          name of the index
+     * @param header        the index's header page
      */
     BTreeIndexImpl(final BufferManager bufferManager, final String name, final Page<BTreeHeader> header) {
         super(bufferManager, name, header);
+    }
+
+    /**
+     * Rotates {@code n} entries from page {@code right} over {@code page} to {@code left},
+     * where {@code leftPos} is the position of the reference to {@code left} in the parent
+     * page {@code page}. After this operation, {@code left} has {@code n} entries more and
+     * {@code right} less than before.
+     *
+     * @param page    parent page
+     * @param leftPos position of the child page ID for {@code left} in {@code page}
+     * @param left    left child page
+     * @param right   right child page
+     * @param n       number of entries to shift over
+     */
+    private static void rotateLeft(final Page<BTreeBranch> page, final int leftPos,
+                                   final Page<? extends BTreePage> left, final Page<? extends BTreePage> right,
+                                   final int n) {
+        if (n > 0) {
+            final int leftSize = BTreePage.getNumKeys(left);
+            final int rightSize = BTreePage.getNumKeys(right);
+            final int newMidKey;
+            if (BTreePage.isLeafPage(left)) {
+                final Page<BTreeLeaf> lLeaf = BTreeLeaf.cast(left);
+                final Page<BTreeLeaf> rLeaf = BTreeLeaf.cast(right);
+                newMidKey = BTreeLeaf.getKey(rLeaf, n);
+                BTreeLeaf.copyEntries(rLeaf, 0, lLeaf, leftSize, n);
+                BTreeLeaf.shiftEntries(rLeaf, n, 0, rightSize - n);
+            } else {
+                final Page<BTreeBranch> lBranch = BTreeBranch.cast(left);
+                final Page<BTreeBranch> rBranch = BTreeBranch.cast(right);
+                newMidKey = BTreeBranch.getKey(rBranch, n - 1);
+                BTreeBranch.insertEntry(lBranch, leftSize, BTreeBranch.getKey(page, leftPos),
+                        BTreeBranch.getChildID(rBranch, 0));
+                BTreeBranch.copyEntries(rBranch, 0, lBranch, leftSize + 1, n - 1);
+                BTreeBranch.setChildID(rBranch, 0, BTreeBranch.getChildID(rBranch, n));
+                BTreeBranch.shiftEntries(rBranch, n, 0, rightSize - n);
+            }
+            BTreeBranch.setKey(page, leftPos, newMidKey);
+            BTreePage.setNumKeys(left, leftSize + n);
+            BTreePage.setNumKeys(right, rightSize - n);
+        }
+    }
+
+    /**
+     * Rotates {@code n} entries from page {@code left} over {@code page} to {@code right},
+     * where {@code leftPos} is the position of the reference to {@code left} in the parent
+     * page {@code page}. After this operation, {@code right} has {@code n} entries more and
+     * {@code left} less than before.
+     *
+     * @param page    parent page
+     * @param leftPos position of the child page ID for {@code left} in {@code page}
+     * @param left    left child page
+     * @param right   right child page
+     * @param n       number of entries to shift over
+     */
+    private static void rotateRight(final Page<BTreeBranch> page, final int leftPos,
+                                    final Page<? extends BTreePage> left, final Page<? extends BTreePage> right,
+                                    final int n) {
+        if (n > 0) {
+            final int leftSize = BTreePage.getNumKeys(left);
+            final int rightSize = BTreePage.getNumKeys(right);
+            final int midKey = BTreeBranch.getKey(page, leftPos);
+            final int newMidKey;
+            if (BTreePage.isLeafPage(left)) {
+                final Page<BTreeLeaf> lLeaf = BTreeLeaf.cast(left);
+                final Page<BTreeLeaf> rLeaf = BTreeLeaf.cast(right);
+                newMidKey = BTreeLeaf.getKey(lLeaf, leftSize - n);
+                BTreeLeaf.shiftEntries(rLeaf, 0, n, rightSize);
+                BTreeLeaf.copyEntries(lLeaf, leftSize - n, rLeaf, 0, n);
+            } else {
+                final Page<BTreeBranch> lBranch = BTreeBranch.cast(left);
+                final Page<BTreeBranch> rBranch = BTreeBranch.cast(right);
+                newMidKey = BTreeBranch.getKey(lBranch, leftSize - n);
+                BTreeBranch.shiftEntries(rBranch, 0, n, rightSize);
+                BTreeBranch.setKey(rBranch, n - 1, midKey);
+                BTreeBranch.setChildID(rBranch, n, BTreeBranch.getChildID(rBranch, 0));
+                BTreeBranch.copyEntries(lBranch, leftSize - n + 1, rBranch, 0, n - 1);
+                BTreeBranch.setChildID(rBranch, 0,
+                        BTreeBranch.getChildID(lBranch, leftSize - n + 1));
+            }
+            BTreeBranch.setKey(page, leftPos, newMidKey);
+            BTreePage.setNumKeys(left, leftSize - n);
+            BTreePage.setNumKeys(right, rightSize + n);
+        }
     }
 
     @Override
@@ -79,14 +160,15 @@ public final class BTreeIndexImpl extends BTreeIndex {
 
     /**
      * Recursive helper method for {@link #insert(PageID, int, RecordID)}.
-     * @param pageID ID of the page to insert into
-     * @param key key to insert
-     * @param value record ID to insert
-     * @param parentID ID of the parent, {@code null} for the root page
-     * @param parPos position of the current page's ID in the parent page
+     *
+     * @param pageID     ID of the page to insert into
+     * @param key        key to insert
+     * @param value      record ID to insert
+     * @param parentID   ID of the parent, {@code null} for the root page
+     * @param parPos     position of the current page's ID in the parent page
      * @param parNumKeys number of keys in the parent page
      * @return an entry consisting of the middle key and the ID of the child page to insert
-     *         if the page was split as a result of the insertion, {@code null} otherwise
+     * if the page was split as a result of the insertion, {@code null} otherwise
      */
     private Entry insert(final PageID pageID, final int key, final RecordID value,
                          final PageID parentID, final int parPos, final int parNumKeys) {
@@ -225,10 +307,12 @@ public final class BTreeIndexImpl extends BTreeIndex {
             // insert into right block
             midKey = BTreeBranch.getKey(left, BTreeBranch.MIN_KEYS);
             BTreeBranch.setChildID(right, 0, BTreeBranch.getChildID(left, BTreeBranch.MIN_KEYS + 1));
-            BTreeBranch.copyEntries(left, BTreeBranch.MIN_KEYS + 1, right, 0, BTreeBranch.MIN_KEYS - 1);
+            BTreeBranch.copyEntries(
+                    left, BTreeBranch.MIN_KEYS + 1, right, 0, BTreeBranch.MIN_KEYS - 1);
             BTreePage.setNumKeys(left, BTreeBranch.MIN_KEYS);
             BTreePage.setNumKeys(right, BTreeBranch.MIN_KEYS - 1);
-            BTreeBranch.insertEntry(right, pos - BTreeBranch.MIN_KEYS - 1, newChild.getMiddleKey(), newChild.getChildID());
+            BTreeBranch.insertEntry(
+                    right, pos - BTreeBranch.MIN_KEYS - 1, newChild.getMiddleKey(), newChild.getChildID());
         }
 
         // unpin pages and return new pointer
@@ -240,22 +324,15 @@ public final class BTreeIndexImpl extends BTreeIndex {
     /**
      * Inserts the given entry into the given leaf page.
      *
-     * @param pageID
-     *           leaf page's ID
-     * @param page
-     *           the page
-     * @param key
-     *           key to insert
-     * @param value
-     *           record ID to insert
-     * @param parentID
-     *           page ID of the parent page, {@link PageID#INVALID} for the root page
-     * @param parPos
-     *           position of this page's ID in the parent page
-     * @param parNumKeys
-     *           number of keys in the parent page
+     * @param pageID     leaf page's ID
+     * @param page       the page
+     * @param key        key to insert
+     * @param value      record ID to insert
+     * @param parentID   page ID of the parent page, {@link PageID#INVALID} for the root page
+     * @param parPos     position of this page's ID in the parent page
+     * @param parNumKeys number of keys in the parent page
      * @return pair of middle key and new page ID if the page was split, {@code null}
-     *         otherwise
+     * otherwise
      */
     private Entry insertLeaf(final PageID pageID, final Page<BTreeLeaf> page, final int key,
                              final RecordID value, final PageID parentID, final int parPos,
@@ -483,10 +560,8 @@ public final class BTreeIndexImpl extends BTreeIndex {
      * Merges two children of the given page, namely those at positions {@code leftPos} and
      * {@code leftPos + 1}. The right one is deleted after that.
      *
-     * @param page
-     *           parent page
-     * @param leftPos
-     *           position of the left child to be merged
+     * @param page    parent page
+     * @param leftPos position of the left child to be merged
      */
     private void mergeChildren(final Page<BTreeBranch> page, final int leftPos) {
         final BufferManager bufferManager = this.getBufferManager();
@@ -522,97 +597,5 @@ public final class BTreeIndexImpl extends BTreeIndex {
 
         bufferManager.unpinPage(left, UnpinMode.DIRTY);
         bufferManager.freePage(right);
-    }
-
-    /**
-     * Rotates {@code n} entries from page {@code right} over {@code page} to {@code left},
-     * where {@code leftPos} is the position of the reference to {@code left} in the parent
-     * page {@code page}. After this operation, {@code left} has {@code n} entries more and
-     * {@code right} less than before.
-     *
-     * @param page
-     *           parent page
-     * @param leftPos
-     *           position of the child page ID for {@code left} in {@code page}
-     * @param left
-     *           left child page
-     * @param right
-     *           right child page
-     * @param n
-     *           number of entries to shift over
-     */
-    private static void rotateLeft(final Page<BTreeBranch> page, final int leftPos,
-                                   final Page<? extends BTreePage> left, final Page<? extends BTreePage> right, final int n) {
-        if (n > 0) {
-            final int leftSize = BTreePage.getNumKeys(left);
-            final int rightSize = BTreePage.getNumKeys(right);
-            final int newMidKey;
-            if (BTreePage.isLeafPage(left)) {
-                final Page<BTreeLeaf> lLeaf = BTreeLeaf.cast(left);
-                final Page<BTreeLeaf> rLeaf = BTreeLeaf.cast(right);
-                newMidKey = BTreeLeaf.getKey(rLeaf, n);
-                BTreeLeaf.copyEntries(rLeaf, 0, lLeaf, leftSize, n);
-                BTreeLeaf.shiftEntries(rLeaf, n, 0, rightSize - n);
-            } else {
-                final Page<BTreeBranch> lBranch = BTreeBranch.cast(left);
-                final Page<BTreeBranch> rBranch = BTreeBranch.cast(right);
-                newMidKey = BTreeBranch.getKey(rBranch, n - 1);
-                BTreeBranch.insertEntry(lBranch, leftSize, BTreeBranch.getKey(page, leftPos),
-                        BTreeBranch.getChildID(rBranch, 0));
-                BTreeBranch.copyEntries(rBranch, 0, lBranch, leftSize + 1, n - 1);
-                BTreeBranch.setChildID(rBranch, 0, BTreeBranch.getChildID(rBranch, n));
-                BTreeBranch.shiftEntries(rBranch, n, 0, rightSize - n);
-            }
-            BTreeBranch.setKey(page, leftPos, newMidKey);
-            BTreePage.setNumKeys(left, leftSize + n);
-            BTreePage.setNumKeys(right, rightSize - n);
-        }
-    }
-
-    /**
-     * Rotates {@code n} entries from page {@code left} over {@code page} to {@code right},
-     * where {@code leftPos} is the position of the reference to {@code left} in the parent
-     * page {@code page}. After this operation, {@code right} has {@code n} entries more and
-     * {@code left} less than before.
-     *
-     * @param page
-     *           parent page
-     * @param leftPos
-     *           position of the child page ID for {@code left} in {@code page}
-     * @param left
-     *           left child page
-     * @param right
-     *           right child page
-     * @param n
-     *           number of entries to shift over
-     */
-    private static void rotateRight(final Page<BTreeBranch> page, final int leftPos,
-                                    final Page<? extends BTreePage> left, final Page<? extends BTreePage> right, final int n) {
-        if (n > 0) {
-            final int leftSize = BTreePage.getNumKeys(left);
-            final int rightSize = BTreePage.getNumKeys(right);
-            final int midKey = BTreeBranch.getKey(page, leftPos);
-            final int newMidKey;
-            if (BTreePage.isLeafPage(left)) {
-                final Page<BTreeLeaf> lLeaf = BTreeLeaf.cast(left);
-                final Page<BTreeLeaf> rLeaf = BTreeLeaf.cast(right);
-                newMidKey = BTreeLeaf.getKey(lLeaf, leftSize - n);
-                BTreeLeaf.shiftEntries(rLeaf, 0, n, rightSize);
-                BTreeLeaf.copyEntries(lLeaf, leftSize - n, rLeaf, 0, n);
-            } else {
-                final Page<BTreeBranch> lBranch = BTreeBranch.cast(left);
-                final Page<BTreeBranch> rBranch = BTreeBranch.cast(right);
-                newMidKey = BTreeBranch.getKey(lBranch, leftSize - n);
-                BTreeBranch.shiftEntries(rBranch, 0, n, rightSize);
-                BTreeBranch.setKey(rBranch, n - 1, midKey);
-                BTreeBranch.setChildID(rBranch, n, BTreeBranch.getChildID(rBranch, 0));
-                BTreeBranch.copyEntries(lBranch, leftSize - n + 1, rBranch, 0, n - 1);
-                BTreeBranch.setChildID(rBranch, 0,
-                        BTreeBranch.getChildID(lBranch, leftSize - n + 1));
-            }
-            BTreeBranch.setKey(page, leftPos, newMidKey);
-            BTreePage.setNumKeys(left, leftSize - n);
-            BTreePage.setNumKeys(right, rightSize + n);
-        }
     }
 }

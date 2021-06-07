@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
- * Copyright (c) 2013-2016 University of Konstanz.
+ * Copyright (c) 2013-2021 University of Konstanz.
  *
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
@@ -23,7 +23,8 @@ import minibase.storage.file.DiskManager;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,11 +47,6 @@ public class BTreeIndexTest extends BaseTest {
      * The index's name.
      */
     private static final String INDEX_NAME = "BTreeIndexTest.btree";
-
-    /**
-     * Test file containing a B+ tree.
-     */
-    private static final Path INDEX_FILE = Path.of("src/test/resources", INDEX_NAME + ".gz");
 
     /**
      * Returns a new record ID where both the page ID and the slot number have the given
@@ -241,7 +237,7 @@ public class BTreeIndexTest extends BaseTest {
                     index.checkInvariants();
                 }
                 final int key = this.getRandom().nextInt(n);
-                if (index.search(key).isEmpty()) {
+                if (!index.search(key).isPresent()) {
                     success.set(i);
                 }
                 final RecordID rid = newRecordID(i);
@@ -267,8 +263,9 @@ public class BTreeIndexTest extends BaseTest {
     }
 
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void lookupTest() throws IOException {
-        this.withExistingDBFile("LookupTest", INDEX_FILE, (index, entries) -> {
+        this.withExistingDBFile("LookupTest", new File(INDEX_NAME + ".gz"), (index, entries) -> {
             final int n = index.size();
             final Random rng = this.getRandom();
             for (int i = 0; i < 5 * n; i++) {
@@ -279,8 +276,9 @@ public class BTreeIndexTest extends BaseTest {
     }
 
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void deleteTest() throws IOException {
-        this.withExistingDBFile("DeleteTest", INDEX_FILE, (index, entries) -> {
+        this.withExistingDBFile("DeleteTest", new File(INDEX_NAME + ".gz"), (index, entries) -> {
             final int n = index.size();
             final Random rng = this.getRandom();
             for (int i = 0; i < 5 * n; i++) {
@@ -311,8 +309,9 @@ public class BTreeIndexTest extends BaseTest {
     }
 
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void deleteSearchTest() throws IOException {
-        this.withExistingDBFile("DeleteTest", INDEX_FILE, (index, entries) -> {
+        this.withExistingDBFile("DeleteTest", new File(INDEX_NAME + ".gz"), (index, entries) -> {
             final int n = index.size();
             final Random rng = this.getRandom();
             for (int i = 0; i < 5 * n; i++) {
@@ -340,11 +339,11 @@ public class BTreeIndexTest extends BaseTest {
         });
     }
 
-    private void withExistingDBFile(final String name, final Path file,
+    private void withExistingDBFile(final String name, final File file,
                                     final BiConsumer<BTreeIndex, Map<Integer, RecordID>> func) throws IOException {
         final Path dbFile = Files.createTempFile(name, ".minibase");
         try {
-            try (GZIPInputStream in = new GZIPInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
+            try (GZIPInputStream in = new GZIPInputStream(new FileInputStream(file))) {
                 Files.copy(in, dbFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
@@ -502,7 +501,7 @@ public class BTreeIndexTest extends BaseTest {
                 map.put(key, rid);
             }
             // PinCount should stay the same after all operations
-            assertEquals(pinned, bufferManager.getNumPinned());
+            assertTrue(pinned == bufferManager.getNumPinned());
 
             int rem = 0;
             for (final Map.Entry<Integer, RecordID> e : map.entrySet()) {
@@ -647,6 +646,7 @@ public class BTreeIndexTest extends BaseTest {
      * Fills one leaf and forces a leaf split.
      */
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void testSplitLeaf() {
         // fill one leaf, forcing one split
         try (BTreeIndex index = BTreeIndex.createIndex(this.getBufferManager(), null)) {
@@ -659,6 +659,7 @@ public class BTreeIndexTest extends BaseTest {
      * Force repeated leaf splits.
      */
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void testSplitLeaves() {
         for (int i = 1; i <= (BTreeBranch.MAX_KEYS + 1); ++i) {
             try (BTreeIndex index = BTreeIndex.createIndex(this.getBufferManager(), null)) {
@@ -672,6 +673,7 @@ public class BTreeIndexTest extends BaseTest {
      * Fills a whole branch.
      */
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void testFillBranch() {
         // fill as many leaves as can be reference by one branch node
         try (BTreeIndex index = BTreeIndex.createIndex(this.getBufferManager(), null)) {
@@ -684,6 +686,7 @@ public class BTreeIndexTest extends BaseTest {
      * Forces a branch split.
      */
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void testSplitBranch() {
         // "fill" a whole branch node and insert one additional entry, forcing a branch split
         try (BTreeIndex index = BTreeIndex.createIndex(this.getBufferManager(), null)) {
@@ -696,6 +699,7 @@ public class BTreeIndexTest extends BaseTest {
      * Splits branches repeatedly.
      */
     @Test
+    @Ignore("to use these tests, set DiskManager#PAGE_SIZE to 1 << 7")
     public void testSplitBranches() {
         for (int i = 1; i <= (BTreeBranch.MAX_KEYS + 1); ++i) {
             try (BTreeIndex index = BTreeIndex.createIndex(this.getBufferManager(), null)) {

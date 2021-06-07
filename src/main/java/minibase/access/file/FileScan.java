@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
- * Copyright (c) 2013-2016 University of Konstanz.
+ * Copyright (c) 2013-2021 University of Konstanz.
  *
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
@@ -11,8 +11,8 @@
 package minibase.access.file;
 
 import minibase.RecordID;
+import minibase.query.evaluator.TupleIterator;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -20,11 +20,13 @@ import java.util.NoSuchElementException;
  *
  * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
  */
-public interface FileScan extends Iterator<byte[]>, AutoCloseable {
+public interface FileScan extends TupleIterator {
+
     /**
      * The empty file scan.
      */
     FileScan EMPTY = new FileScan() {
+
         @Override
         public boolean hasNext() {
             return false;
@@ -54,28 +56,6 @@ public interface FileScan extends Iterator<byte[]>, AutoCloseable {
         }
     };
 
-    /**
-     * Returns {@code true} if there are more tuples and {@code false} otherwise.
-     *
-     * @return {@code true} if there are more tuples available, {@code false} otherwise
-     */
-    @Override
-    boolean hasNext();
-
-    /**
-     * Computes and returns the next tuple produced by this iterator. If there are no more tuples to return,
-     * this method will throw a {@code NoSuchElementException}.
-     *
-     * @return next tuple
-     * @throws NoSuchElementException if there are no more tuples to return
-     */
-    @Override
-    byte[] next();
-
-    /**
-     * Resets this iterator to start at the first tuple again.
-     */
-    void reset();
 
     /**
      * Returns the ID of the last returned record.
@@ -93,10 +73,4 @@ public interface FileScan extends Iterator<byte[]>, AutoCloseable {
      * @throws IllegalArgumentException if the length of {@code newRecord} does not fit the records of the file
      */
     void updateLast(byte[] newRecord);
-
-    /**
-     * Closes the iterator and releases all allocated resources, e.g., pinned pages.
-     */
-    @Override
-    void close();
 }

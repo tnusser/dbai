@@ -34,7 +34,7 @@ public final class DiskManager implements Closeable {
     /**
      * Size of a page, in bytes.
      */
-    public static final int PAGE_SIZE = 1 << 7;
+    public static final int PAGE_SIZE = 1 << 10;
     /**
      * Maximum size of a name (i.e. of files or attributes).
      */

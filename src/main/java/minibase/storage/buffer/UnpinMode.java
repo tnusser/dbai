@@ -11,7 +11,7 @@
 package minibase.storage.buffer;
 
 /**
- * The different modes for unpinning pages with the {@link BufferManager}.
+ * The different modes for unpinning pages with the {@link BufferManagerGroup00}.
  *
  * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
  */

@@ -121,8 +121,8 @@ public final class BufferManagerImpl implements BufferManager {
      * @throws IllegalStateException if the buffer pool is completely filled with pinned pages
      */
     public <T extends PageType> Page<T> copyPage(final Page<T> pageToCopy) {
-        @SuppressWarnings("unchecked")
-        final Page<T> copy = (Page<T>) this.pinPage(this.diskManager.allocatePage(), false);
+        @SuppressWarnings("unchecked") final Page<T> copy =
+                (Page<T>) this.pinPage(this.diskManager.allocatePage(), false);
         System.arraycopy(pageToCopy.getData(), 0, copy.getData(), 0, DiskManager.PAGE_SIZE);
         return copy;
     }

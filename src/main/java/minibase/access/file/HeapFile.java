@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
- * Copyright (c) 2013-2016 University of Konstanz.
+ * Copyright (c) 2013-2021 University of Konstanz.
  *
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
@@ -45,7 +45,7 @@ public final class HeapFile implements File {
     /**
      * Header page of the directory.
      */
-    private final PageID headID;
+    private PageID headID;
 
     /**
      * Pointer to the first directory page with free space and pointer to the slot inside this directory page,
@@ -159,6 +159,9 @@ public final class HeapFile implements File {
 
     @Override
     public void delete() {
+        if (!this.headID.isValid()) {
+            throw new IllegalStateException("File already deleted.");
+        }
         // for each directory page
         PageID dirID = this.headID;
         while (dirID.isValid()) {
@@ -178,6 +181,7 @@ public final class HeapFile implements File {
         if (this.name != null) {
             this.bufferManager.getDiskManager().deleteFileEntry(this.name);
         }
+        this.headID = PageID.INVALID;
     }
 
     /**
@@ -208,8 +212,8 @@ public final class HeapFile implements File {
      * {@inheritDoc}
      */
     @Override
-    public byte[] selectRecord(final RecordID id) {
-        final RecordID rid = (RecordID) id;
+    public byte[] selectRecord(final RecordID rid) {
+
         // pin the data page of the record
         final Page<HeapFilePage> page = this.bufferManager.pinPage(rid.getPageID());
         try {
@@ -225,8 +229,8 @@ public final class HeapFile implements File {
      * {@inheritDoc}
      */
     @Override
-    public void updateRecord(final RecordID id, final byte[] newRecord) {
-        final RecordID rid = (RecordID) id;
+    public void updateRecord(final RecordID rid, final byte[] newRecord) {
+
         // pin the data page of the record
         final Page<HeapFilePage> page = this.bufferManager.pinPage(rid.getPageID());
         try {
@@ -244,8 +248,7 @@ public final class HeapFile implements File {
      * {@inheritDoc}
      */
     @Override
-    public void deleteRecord(final RecordID id) {
-        final RecordID rid = (RecordID) id;
+    public void deleteRecord(final RecordID rid) {
         // pin the data page of the record
         final Page<HeapFilePage> page = this.bufferManager.pinPage(rid.getPageID());
 
@@ -471,7 +474,7 @@ public final class HeapFile implements File {
         } while (true);
 
         // create the new data page
-        final Page<HeapFilePage> dataPage = HeapFilePage.newPage(this.bufferManager, DATA_PAGE);
+        final Page<HeapFilePage> dataPage = HeapFilePage.newPage(this.bufferManager, HeapFile.DATA_PAGE);
         final PageID dataID = dataPage.getPageID();
 
         // link to directory page
@@ -536,6 +539,11 @@ public final class HeapFile implements File {
 
     @Override
     public void close() {
+        // temporary files get deleted when they are closed
+        // this way, when a try-with-resource block ends, the temporary file is gone :)
+        if (this.name == null) {
+            this.delete();
+        }
     }
 
     /**
