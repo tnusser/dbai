@@ -1,0 +1,11 @@
+Assignment06 - Tobias Nusser, Andreas Bäuerle
+
+################### Overall Status ##################################################
+We implemented Exercise 1 and 2 following the instructions of the assignment. 
+For exercise 3 and 4 we decided to implement the advanced version. We did not implement the 
+5th exercise, thus we only checked the results manually. As a result the implementation will 
+(most likely :D) contain bugs.
+
+################### Time Spent ######################################################
+
+Approx 23 hrs pP
