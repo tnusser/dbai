@@ -1,5 +1,5 @@
 /*
- * @(#)BTreeIterator.java   1.0   Oct 23, 2013
+ * @(#)BTreeKeyIterator.java   1.0   Oct 23, 2013
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
@@ -9,6 +9,8 @@
  * Use is subject to license terms. Please refer to the included copyright notice.
  */
 package minibase.access.btree;
+
+import java.util.NoSuchElementException;
 
 import minibase.RecordID;
 import minibase.SearchKey;
@@ -26,7 +28,7 @@ import minibase.storage.buffer.UnpinMode;
  *
  * @author Leo Woerteler &lt;leonard.woerteler@uni-konstanz.de&gt;
  */
-public final class BTreeIterator implements IndexScan {
+public final class BTreeKeyIterator implements IndexScan {
 
    /** The buffer manager of the {@link BTreeIndex}. */
    private final BufferManager bufferManager;
@@ -42,6 +44,8 @@ public final class BTreeIterator implements IndexScan {
    private int size;
    /** Type of the key in byte. */
    private final SearchKeyType keyType;
+   /** The starting key of the iterator. */
+   private final SearchKey startKey;
 
    /**
     * Constructor specifying the starting position of the iterator.
@@ -52,12 +56,15 @@ public final class BTreeIterator implements IndexScan {
     *           the starting page (must be a leaf page)
     * @param startPos
     *           the starting position inside the page
+    * @param startKey
+    *           the starting key of the iterator
     * @param keyType
     *           the type of the key in byte
     */
-   public BTreeIterator(final BufferManager bufferManager, final Page<BTreeLeaf> page,
-         final int startPos, final SearchKeyType keyType) {
+   public BTreeKeyIterator(final BufferManager bufferManager, final Page<BTreeLeaf> page,
+         final int startPos, final SearchKey startKey, final SearchKeyType keyType) {
       this.bufferManager = bufferManager;
+      this.startKey = startKey;
       this.keyType = keyType;
       this.startPageID = page.getPageID();
       this.startPosition = startPos;
@@ -71,7 +78,8 @@ public final class BTreeIterator implements IndexScan {
 
    @Override
    public boolean hasNext() {
-      return this.position < this.size;
+      return this.position < this.size
+            && BTreeLeaf.getKey(this.page, this.position, this.keyType).equals(this.startKey);
    }
 
    /**
@@ -81,7 +89,13 @@ public final class BTreeIterator implements IndexScan {
     */
    public IndexEntry next() {
       final int pos = this.position++;
+      if (this.page == null) {
+         throw new NoSuchElementException("No more elements.");
+      }
       final SearchKey key = BTreeLeaf.getKey(this.page, pos, this.keyType);
+      if (!key.equals(this.startKey)) {
+         throw new NoSuchElementException("No more elements.");
+      }
       final RecordID recordID = BTreeLeaf.getRecordID(this.page, pos, this.keyType.getKeyLength());
       this.moveToNext();
       return new IndexEntry(key, recordID, this.keyType);
