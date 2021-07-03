@@ -34,7 +34,7 @@ public class JoinTest extends EvaluatorBaseTest {
                 System.out.print(Convert.readInt(nextTuple, 0) + "\t");
                 System.out.print(Convert.readInt(nextTuple, 4) + "\t");
                 System.out.print(Convert.readDate(nextTuple, 8) + "\t");
-                System.out.println(Convert.readString(nextTuple, 11, 50) + "  \t");
+                System.out.println(Convert.readString(nextTuple, 11, 50) + "\t");
             }
             sailorScan.close();
             reservesScan.close();
@@ -42,7 +42,7 @@ public class JoinTest extends EvaluatorBaseTest {
             final SortMergeEquiJoin sortedMergeJoinResult = new SortMergeEquiJoin(new TableScan(S_RESERVES, reserves),
                     0, new TableScan(S_SAILORS, sailors), 0, this.getBufferManager());
             try (TupleIterator iterator = sortedMergeJoinResult.open()) {
-                System.out.println("hallo");
+                System.out.println("------------------------------");
                 while (iterator.hasNext()) {
                     final byte[] nextTuple = iterator.next();
 
@@ -54,9 +54,7 @@ public class JoinTest extends EvaluatorBaseTest {
                     System.out.print(Convert.readInt(nextTuple, 61) + "\t");
                     System.out.print(Convert.readString(nextTuple, 65, 50) + "\t");
                     System.out.print(Convert.readInt(nextTuple, 115) + "\t");
-                    System.out.println(Convert.readFloat(nextTuple, 119) + "  \t");
-
-                    System.out.println("\n");
+                    System.out.println(Convert.readFloat(nextTuple, 119) + "\t");
                 }
             } catch (final Exception e) {
                 e.printStackTrace();
