@@ -23,17 +23,17 @@ public class SortMergeEquiJoin extends AbstractOperator {
     /**
      * Offset of a column in the outer relation’s schema.
      */
-    private int outerOffset;
+    private final int outerOffset;
 
     /**
-     * Innner input relation.
+     * Inner input relation.
      */
     private final Operator inner;
 
     /**
      * Offset of a column in the inner relation’s schema.
      */
-    private int innerOffset;
+    private final int innerOffset;
 
     /**
      * Buffer Manager used.
@@ -47,12 +47,12 @@ public class SortMergeEquiJoin extends AbstractOperator {
     private final RecordComparator comparator;
 
     /**
-     *
+     * Number of buffer pages used for creating initial runs.
      */
     private final int bufferpages = 6;
 
     /**
-     *
+     * Maximum number of runs that are merged simultaneously.
      */
     private final int k = 2;
 
@@ -102,7 +102,6 @@ public class SortMergeEquiJoin extends AbstractOperator {
 
         if (!sortedInner.hasNext()) {
             sortedInner.close();
-            //TODO TBC
             sortedOuter.close();
             return TupleIterator.EMPTY;
         }
