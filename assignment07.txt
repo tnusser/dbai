@@ -1,0 +1,9 @@
+Assignment 07 - Tobias Nusser & Andreas Bäuerle
+
+Overall Status 
+We chose to implement the second join alogorithm of the assignment, the Sort-Merge-Join. 
+We oriented ourselves on the already implemented file NestedLoopEquiJoin for some of the code.
+
+
+Time Spent
+10 hrs pP
