@@ -49,7 +49,7 @@ public class SortMergeEquiJoin extends AbstractOperator {
     /**
      * Number of buffer pages used for creating initial runs.
      */
-    private final int bufferpages = 6;
+    private final int bufferpages = 4;
 
     /**
      * Maximum number of runs that are merged simultaneously.

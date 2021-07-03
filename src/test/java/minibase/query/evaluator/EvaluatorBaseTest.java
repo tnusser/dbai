@@ -19,6 +19,8 @@ import minibase.catalog.DataType;
 import minibase.query.schema.Schema;
 import minibase.query.schema.SchemaBuilder;
 
+import java.sql.Date;
+
 /**
  * This base class contains code that is common to the test cases of the evaluator layer.
  *
@@ -34,6 +36,18 @@ public class EvaluatorBaseTest extends BaseTest {
             "Alexander", "Florian", "Johann", "Christoph", "Menna", "Michael", "Javid", "Lokesh", "Madhurima",
             "Shahana", "Emanuel", "Minh Huyen", "Mario", "Feeras", "Manuel", "Klaus", "Niklas", "Philip", "Sema",
             "Nayeem", "Tribhuwan", "Jens", "Leonard"};
+
+    /**
+     * Array with boat names
+     */
+    protected static final String[] BNAMES = {"Serenity", "Island Time", "Scout", "Pura Vida", "Seas the Day",
+            "Shenanigans", "Black Pearl", "Cool Change", "Liberty", "Knot on Call"};
+
+    /**
+     * Array with boat colors
+     */
+    protected static final String[] BCOLORS = { "red", "yellow", "green", "blue", "white", "brown"};
+
 
     /**
      * Schema of the Sailors relation.
@@ -84,6 +98,54 @@ public class EvaluatorBaseTest extends BaseTest {
         }
         return sailors;
     }
+
+    /**
+     * Returns the heap file containing the data of the Reserves relation.
+     *
+     * @param num number of tuples to generate
+     * @param numSailors number of sailors
+     * @param numBoats number of boats
+     * @return heap file of the Reserves relation
+     */
+    protected File createReserves(final int num, final int numSailors, final int numBoats) {
+        final File reserves = HeapFile.createTemporary(this.getBufferManager());
+        for (int i = 0; i < num; i++) {
+            final byte[] tuple = EvaluatorBaseTest.S_RESERVES.newTuple();
+            S_RESERVES.setAllFields(tuple,
+                    this.getRandom().nextInt(numSailors),
+                    this.getRandom().nextInt(numBoats),
+                    new Date(
+                            this.getRandom().nextInt(122),
+                            this.getRandom().nextInt(12),
+                            this.getRandom().nextInt(32)
+                    ),
+                    "Reservation" + i
+            );
+            reserves.insertRecord(tuple);
+        }
+        return reserves;
+    }
+
+    /**
+     * Returns the heap file containing the data of the boat relation.
+     * @param num number of tuples to generate
+     *
+     * @return heap file of the boat relation
+     */
+    protected File createBoats(final int num) {
+        final File boats = HeapFile.createTemporary(this.getBufferManager());
+        for (int i = 0; i < num; i++) {
+            final byte[] tuple = EvaluatorBaseTest.S_BOATS.newTuple();
+            S_BOATS.setAllFields(tuple,
+                    i,
+                    EvaluatorBaseTest.BNAMES[this.getRandom().nextInt(EvaluatorBaseTest.BNAMES.length)],
+                    EvaluatorBaseTest.BCOLORS[this.getRandom().nextInt(EvaluatorBaseTest.BCOLORS.length)]
+            );
+            boats.insertRecord(tuple);
+        }
+        return boats;
+    }
+
 
     /**
      * Test setup that creates a new database on disk and a heap file for the Sailors relations. It also
