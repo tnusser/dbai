@@ -138,13 +138,71 @@ public class SortMergeEquiJoin extends AbstractOperator {
                     }
                 }
 
-                final byte[] prevInner = currentInner.clone();
-                final LinkedList<byte[]> innerList = new LinkedList<>();
+                final LinkedList<byte[]> tempInnerList = new LinkedList<>();
+                final byte[] priorInner = currentInner.clone();
 
+                // iterate through outer schema
+                while (SortMergeEquiJoin.this.comparator.equals(currentOuter, priorInner)) {
+                    currentInner = priorInner;
+                    // iterate through inner schema
+                    while (SortMergeEquiJoin.this.comparator.equals(currentOuter, currentInner)) {
+                        adjacentTuple.add(Schema.join(currentOuter, currentInner));
+                        tempInnerList.addLast(currentInner);
 
+                        if (sortedInner.hasNext()) {
+                            currentInner = sortedInner.next();
+                        } else {
+                            currentInner = null;
+                            return true;
+                        }
+                    }
+                    if (sortedOuter.hasNext()) {
+                        currentOuter = sortedOuter.next();
+                        while (sortedOuter.hasNext() && SortMergeEquiJoin.this.comparator.equals(
+                                currentOuter, priorInner)) {
+                            for (byte[] tempInnerVal : tempInnerList) {
+                                adjacentTuple.add(Schema.join(currentOuter, tempInnerVal));
+                                currentOuter = sortedOuter.next();
+                            }
+                        }
+                        // reset tempInnerList
+                        tempInnerList.clear();
+                    } else {
+                        currentOuter = null;
+                        return !adjacentTuple.isEmpty();
+                    }
+                }
+                return !adjacentTuple.isEmpty();
+            }
+            public byte[] next() {
+                // validate the next tuple
+                if (!hasNext()) {
+                    close();
+                    throw new NoSuchElementException("No more tuples to return.");
+                }
+                // return head of queue
+                return adjacentTuple.poll();
             }
 
+            @Override
+            public void reset() {
+                // reset iterator and temp arrays
+                sortedOuter.reset();
+                sortedInner.reset();
+                currentOuter = null;
+                currentInner = null;
+                adjacentTuple.clear();
+            }
 
+            @Override
+            public void close() {
+                // close iterator and temp arrays
+                sortedOuter.close();
+                sortedInner.close();
+                currentOuter = null;
+                currentInner = null;
+                adjacentTuple.clear();
+            }
         };
     }
 }
