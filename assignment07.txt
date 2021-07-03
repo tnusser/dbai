@@ -1,9 +1,14 @@
 Assignment 07 - Tobias Nusser & Andreas Bäuerle
 
-Overall Status 
+######## Overall Status
 We chose to implement the second join alogorithm of the assignment, the Sort-Merge-Join. 
 We oriented ourselves on the already implemented file NestedLoopEquiJoin for some of the code.
 
+For the tests, we started with implementing the Evaluator Base test further. We added
+random Arrays of Boat names and colors, which allowed us to implement the methods to
+create test-sets according the Schemas of Reserves and boats.
 
-Time Spent
-10 hrs pP
+We implemented the first test: "Test that your algorithm works correctly if you join the two relations on the sid attribute."
+
+######## Time Spent
+12 hrs pP
