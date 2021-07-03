@@ -4,7 +4,6 @@ import minibase.access.file.FileScan;
 import minibase.access.file.HeapFile;
 import minibase.util.Convert;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
 public class JoinTest extends EvaluatorBaseTest {
 
