@@ -15,25 +15,24 @@ import java.util.Optional;
 
 /**
  * Common interface of table references.
- * 
+ *
  * @author Michael Grossniklaus &lt;michael.grossniklaus@uni.kn&gt;
  * @version 1.0
  */
 public interface TableReference extends Reference {
 
-   /**
-    * Returns the column with the given name of this table.
-    *
-    * @param name
-    *           column name
-    * @return column representation
-    */
-   Optional<ColumnReference> getColumn(String name);
+    /**
+     * Returns the column with the given name of this table.
+     *
+     * @param name column name
+     * @return column representation
+     */
+    Optional<ColumnReference> getColumn(String name);
 
-   /**
-    * Returns all columns of this table.
-    *
-    * @return list of column representation
-    */
-   List<ColumnReference> getColumns();
+    /**
+     * Returns all columns of this table.
+     *
+     * @return list of column representation
+     */
+    List<ColumnReference> getColumns();
 }

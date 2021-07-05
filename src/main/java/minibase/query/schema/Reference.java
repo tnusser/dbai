@@ -18,33 +18,33 @@ package minibase.query.schema;
  */
 public interface Reference {
 
-   /**
-    * Returns the ID of this symbol.
-    *
-    * @return symbol ID
-    */
-   int getID();
+    /**
+     * Returns the ID of this symbol.
+     *
+     * @return symbol ID
+     */
+    int getID();
 
-   /**
-    * Returns the name given to this reference.
-    *
-    * @return reference name
-    */
-   String getName();
+    /**
+     * Returns the name given to this reference.
+     *
+     * @return reference name
+     */
+    String getName();
 
-   /**
-    * Returns the declared size of this reference in bytes.
-    *
-    * @return declared size in bytes
-    */
-   int getSize();
+    /**
+     * Returns the declared size of this reference in bytes.
+     *
+     * @return declared size in bytes
+     */
+    int getSize();
 
-   /**
-    * Returns the declared width of this reference as a fraction of a block. This is a property of the schema
-    * and not to be confused with the <em>average width</em>, which is a statistical value and accessed via
-    * {@code TableStatistics} or {@code ColumnStatistics}.
-    *
-    * @return declared width (as a fraction of a block)
-    */
-   double getWidth();
+    /**
+     * Returns the declared width of this reference as a fraction of a block. This is a property of the schema
+     * and not to be confused with the <em>average width</em>, which is a statistical value and accessed via
+     * {@code TableStatistics} or {@code ColumnStatistics}.
+     *
+     * @return declared width (as a fraction of a block)
+     */
+    double getWidth();
 }

@@ -10,9 +10,10 @@
  */
 package minibase.query.schema;
 
-
 import minibase.AbstractForeignKey;
 import minibase.catalog.CatalogKey;
+
+import java.util.Optional;
 
 /**
  * In the schema of query expressions, a foreign key is represented as a key consisting of the referencing
@@ -23,31 +24,48 @@ import minibase.catalog.CatalogKey;
  */
 public class SchemaForeignKey extends AbstractForeignKey<SchemaKey> {
 
-   /** Unresolved catalog key. */
-   @SuppressWarnings("unused")
-   private final CatalogKey unresolved;
+    /**
+     * Unresolved catalog key.
+     */
+    private final CatalogKey unresolved;
 
-   /**
-    * Constructs a new schema foreign key using the given (resolved) referencing schema key and the given
-    * (unresolved) catalog key.
-    *
-    * @param referencing
-    *           referencing key
-    * @param unresolved
-    *           referenced key
-    */
-   public SchemaForeignKey(final SchemaKey referencing, final CatalogKey unresolved) {
-      super(referencing, null);
-      this.unresolved = unresolved;
-   }
+    /**
+     * Constructs a new schema foreign key using the given (resolved) referencing schema key and the given
+     * (unresolved) catalog key.
+     *
+     * @param referencing referencing key
+     * @param unresolved  referenced key
+     */
+    public SchemaForeignKey(final SchemaKey referencing, final CatalogKey unresolved) {
+        super(referencing, null);
+        this.unresolved = unresolved;
+    }
 
-   /**
-    * Returns whether this schema key has been successfully resolved, i.e., whether a schema key consisting of
-    * the referencing column references has been created.
-    *
-    * @return {@code true} if this key is resolved, {@code false} otherwise
-    */
-   public boolean isResolved() {
-      return this.getReferencedColumns() != null;
-   }
+    /**
+     * Returns whether this schema key has been successfully resolved, i.e., whether a schema key consisting of
+     * the referencing column references has been created.
+     *
+     * @return {@code true} if this key is resolved, {@code false} otherwise
+     */
+    public boolean isResolved() {
+        return this.getReferencedColumns() != null;
+    }
+
+    /**
+     * Tries to resolve this key against the given list of columns and, if possible, returns the created schema
+     * key consisting of the referencing column references.
+     *
+     * @param schema column list
+     * @return resolved key optional
+     */
+    public Optional<SchemaKey> resolve(final Iterable<ColumnReference> schema) {
+        if (this.isResolved()) {
+            throw new IllegalStateException("Schema key " + this + " is already resolved.");
+        }
+        final Optional<SchemaKey> key = SchemaKey.resolve(this.unresolved, schema);
+        if (key.isPresent()) {
+            this.setReferencedColumns(key.get());
+        }
+        return Optional.empty();
+    }
 }

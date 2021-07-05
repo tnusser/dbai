@@ -22,17 +22,17 @@ import java.util.Optional;
  */
 public interface ColumnReference extends Reference {
 
-   /**
-    * Returns the declared data type of this column reference.
-    *
-    * @return data type
-    */
-   DataType getType();
+    /**
+     * Returns the declared data type of this column reference.
+     *
+     * @return data type
+     */
+    DataType getType();
 
-   /**
-    * Returns the reference to the parent table of this column reference.
-    *
-    * @return parent reference or {@code null}, if this column reference has no parent table
-    */
-   Optional<TableReference> getParent();
+    /**
+     * Returns the reference to the parent table of this column reference.
+     *
+     * @return parent reference or {@code null}, if this column reference has no parent table
+     */
+    Optional<TableReference> getParent();
 }

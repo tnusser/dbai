@@ -10,11 +10,11 @@
  */
 package minibase.catalog;
 
+import minibase.AbstractKey;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import minibase.AbstractKey;
 
 /**
  * A key is represented in the Minibase system catalog as a set of column identifiers.
@@ -23,18 +23,17 @@ import minibase.AbstractKey;
  */
 public class CatalogKey extends AbstractKey<Integer> {
 
-   /**
-    * Constructs a new column set with the given array of columns IDs.
-    *
-    * @param columns
-    *           array of key column identifiers
-    */
-   public CatalogKey(final int... columns) {
-      super(Arrays.stream(columns).mapToObj(i -> Integer.valueOf(i)).collect(Collectors.toList()));
-   }
+    /**
+     * Constructs a new column set with the given array of columns IDs.
+     *
+     * @param columns array of key column identifiers
+     */
+    public CatalogKey(final int... columns) {
+        super(Arrays.stream(columns).mapToObj(i -> Integer.valueOf(i)).collect(Collectors.toList()));
+    }
 
-   @Override
-   public boolean equals(final List< ? > columns, final List< ? > other) {
-      return columns.containsAll(other);
-   }
+    @Override
+    public boolean equals(final List<?> columns, final List<?> other) {
+        return columns.containsAll(other);
+    }
 }

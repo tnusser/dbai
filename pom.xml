@@ -67,6 +67,16 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${jakarta.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
@@ -83,6 +93,7 @@
         <maven.version>3.2.0</maven.version>
         <junit.version>4.12</junit.version>
         <checkstyle.version>8.42</checkstyle.version>
+        <jakarta.version>3.0.1</jakarta.version>
         <!-- Maven Plugin Versions -->
         <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
@@ -94,6 +105,14 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -187,6 +206,8 @@
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <includeResources>false</includeResources>
                     <configLocation>checkstyle.xml</configLocation>
+                    <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+                    <!-- suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression -->
                     <failOnViolation>true</failOnViolation>
                     <violationSeverity>warning</violationSeverity>
                 </configuration>

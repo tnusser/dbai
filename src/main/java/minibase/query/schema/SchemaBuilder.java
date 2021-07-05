@@ -24,157 +24,153 @@ import java.util.Optional;
  */
 public class SchemaBuilder {
 
-   /** Columns in the schema. */
-   private final List<ColumnReference> columns = new ArrayList<>();
+    /**
+     * Columns in the schema.
+     */
+    private final List<ColumnReference> columns = new ArrayList<>();
 
-   /**
-    * Creates a new, empty schema builder.
-    */
-   public SchemaBuilder() {
-   }
+    /**
+     * Creates a new, empty schema builder.
+     */
+    public SchemaBuilder() {
+    }
 
-   /**
-    * Creates a schema builder initialized with the given schema.
-    *
-    * @param original
-    *           initial state of this builder
-    */
-   public SchemaBuilder(final Schema original) {
-      this.addAll(original);
-   }
+    /**
+     * Creates a schema builder initialized with the given schema.
+     *
+     * @param original initial state of this builder
+     */
+    public SchemaBuilder(final Schema original) {
+        this.addAll(original);
+    }
 
-   /**
-    * Creates a schema builder initialized with selected columns from the given schema.
-    *
-    * @param original
-    *           schema to take columns from
-    * @param columns
-    *           columns of {@code original} to copy
-    */
-   public SchemaBuilder(final Schema original, final int[] columns) {
-      for (final int col : columns) {
-         this.columns.add(original.getColumn(col));
-      }
-   }
+    /**
+     * Creates a schema builder initialized with selected columns from the given schema.
+     *
+     * @param original schema to take columns from
+     * @param columns  columns of {@code original} to copy
+     */
+    public SchemaBuilder(final Schema original, final int[] columns) {
+        for (final int col : columns) {
+            this.columns.add(original.getColumn(col));
+        }
+    }
 
-   /**
-    * Adds a column with the given type, length, and name.
-    *
-    * @param name
-    *           the name of the field
-    * @param type
-    *           the type of the field
-    * @param length
-    *           the length of the field in bytes
-    * @return self-reference for convenience
-    */
-   public SchemaBuilder addField(final String name, final DataType type, final int length) {
-      this.columns.add(new SchemaColumn(name, type, length));
-      return this;
-   }
+    /**
+     * Adds a column with the given type, length, and name.
+     *
+     * @param name   the name of the field
+     * @param type   the type of the field
+     * @param length the length of the field in bytes
+     * @return self-reference for convenience
+     */
+    public SchemaBuilder addField(final String name, final DataType type, final int length) {
+        this.columns.add(new SchemaColumn(name, type, length));
+        return this;
+    }
 
-   /**
-    * Adds the column with the given number from the given schema to this builder.
-    *
-    * @param schema
-    *           schema to copy the column from
-    * @param index
-    *           column index
-    * @return self-reference for convenience
-    */
-   public SchemaBuilder addField(final Schema schema, final int index) {
-      this.columns.add(schema.getColumn(index));
-      return this;
-   }
+    /**
+     * Adds the column with the given number from the given schema to this builder.
+     *
+     * @param schema schema to copy the column from
+     * @param index  column index
+     * @return self-reference for convenience
+     */
+    public SchemaBuilder addField(final Schema schema, final int index) {
+        this.columns.add(schema.getColumn(index));
+        return this;
+    }
 
-   /**
-    * Adds all columns of the given schema to this builder.
-    *
-    * @param other
-    *           schema to add
-    * @return self-reference for convenience
-    */
-   public SchemaBuilder addAll(final Schema other) {
-      for (final ColumnReference column : other) {
-         this.columns.add(column);
-      }
-      return this;
-   }
+    /**
+     * Adds all columns of the given schema to this builder.
+     *
+     * @param other schema to add
+     * @return self-reference for convenience
+     */
+    public SchemaBuilder addAll(final Schema other) {
+        for (final ColumnReference column : other) {
+            this.columns.add(column);
+        }
+        return this;
+    }
 
-   /**
-    * Creates the finished schema.
-    *
-    * @return the schema
-    */
-   public Schema build() {
-      return new Schema(this.columns, Collections.emptyList(), Collections.emptySet(),
-            Collections.emptySet());
-   }
+    /**
+     * Creates the finished schema.
+     *
+     * @return the schema
+     */
+    public Schema build() {
+        return new Schema(this.columns, Collections.emptyList(), Collections.emptySet(),
+                Collections.emptySet());
+    }
 
-   /**
-    * Private class implementing the {@link ColumnReference} interface to manage the columns of the schema.
-    *
-    * @author Michael Grossniklaus &lt;michael.grossniklaus@uni-konstanz.de&gt;
-    * @since 1.0
-    */
-   private final class SchemaColumn implements ColumnReference {
+    /**
+     * Private class implementing the {@link ColumnReference} interface to manage the columns of the schema.
+     *
+     * @author Michael Grossniklaus &lt;michael.grossniklaus@uni-konstanz.de&gt;
+     * @since 1.0
+     */
+    private final class SchemaColumn implements ColumnReference {
 
-      /** Column name. */
-      private final String name;
-      /** Column type. */
-      private final DataType type;
-      /** Column size. */
-      private final int size;
+        /**
+         * Column name.
+         */
+        private final String name;
+        /**
+         * Column type.
+         */
+        private final DataType type;
+        /**
+         * Column size.
+         */
+        private final int size;
 
-      /**
-       * Creates a new column with the given name, type, and size.
-       *
-       * @param name
-       *           column name
-       * @param type
-       *           column type
-       * @param size
-       *           column size
-       */
-      private SchemaColumn(final String name, final DataType type, final int size) {
-         this.name = name;
-         this.type = type;
-         this.size = size;
-      }
+        /**
+         * Creates a new column with the given name, type, and size.
+         *
+         * @param name column name
+         * @param type column type
+         * @param size column size
+         */
+        private SchemaColumn(final String name, final DataType type, final int size) {
+            this.name = name;
+            this.type = type;
+            this.size = size;
+        }
 
-      @Override
-      public int getID() {
-         throw new UnsupportedOperationException("Method SchemaColumn#getID() is not supported.");
-      }
+        @Override
+        public int getID() {
+            throw new UnsupportedOperationException("Method SchemaColumn#getID() is not supported.");
+        }
 
-      @Override
-      public String getName() {
-         return this.name;
-      }
+        @Override
+        public String getName() {
+            return this.name;
+        }
 
-      @Override
-      public int getSize() {
-         return this.size;
-      }
+        @Override
+        public int getSize() {
+            return this.size;
+        }
 
-      @Override
-      public double getWidth() {
-         throw new UnsupportedOperationException("Method SchemaColumn#getWidth() is not supported.");
-      }
+        @Override
+        public double getWidth() {
+            throw new UnsupportedOperationException("Method SchemaColumn#getWidth() is not supported.");
+        }
 
-      @Override
-      public DataType getType() {
-         return this.type;
-      }
+        @Override
+        public DataType getType() {
+            return this.type;
+        }
 
-      @Override
-      public Optional<TableReference> getParent() {
-         throw new UnsupportedOperationException("Method SchemaColumn#getParent() is not supported.");
-      }
+        @Override
+        public Optional<TableReference> getParent() {
+            throw new UnsupportedOperationException("Method SchemaColumn#getParent() is not supported.");
+        }
 
-      @Override
-      public String toString() {
-         return this.name;
-      }
-   }
+        @Override
+        public String toString() {
+            return this.name;
+        }
+    }
 }
