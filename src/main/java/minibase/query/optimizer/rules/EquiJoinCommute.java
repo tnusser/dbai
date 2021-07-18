@@ -14,21 +14,23 @@ package minibase.query.optimizer.rules;
 import minibase.query.optimizer.Expression;
 import minibase.query.optimizer.PhysicalProperties;
 import minibase.query.optimizer.operators.logical.EquiJoin;
-import minibase.query.schema.ColumnReference;
-
-import java.util.List;
 
 public class EquiJoinCommute extends AbstractRule {
 
     public EquiJoinCommute() {
-        // #TODO implement this
-        super(null, 0, null, null);
-        throw new UnsupportedOperationException();
+        super(RuleType.EQUI_JOIN_COMMUTE,
+                1 << RuleType.EQUI_JOIN_LTOR.ordinal()
+                        | 1 << RuleType.EQUI_JOIN_RTOL.ordinal()
+                        | 1 << RuleType.EQUI_JOIN_COMMUTE.ordinal(),
+                new Expression(new EquiJoin(), new Expression(new Leaf(0)), new Expression(new Leaf(1))),
+                new Expression(new EquiJoin(), new Expression(new Leaf(1)), new Expression(new Leaf(0)))
+        );
     }
 
     @Override
     public Expression nextSubstitute(final Expression before, final PhysicalProperties requiredProperties) {
-        // #TODO implement this
-        throw new UnsupportedOperationException();
+        final EquiJoin equi = (EquiJoin) before.getOperator();
+        return new Expression(new EquiJoin(equi.getRightColumns(), equi.getLeftColumns()),
+                before.getInput(1), before.getInput(0));
     }
 }
