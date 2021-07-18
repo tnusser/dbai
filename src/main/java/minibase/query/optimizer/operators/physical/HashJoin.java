@@ -54,9 +54,7 @@ public class HashJoin extends AbstractPhysicalJoin {
      * @param rightColumns right columns
      */
     public HashJoin(final List<ColumnReference> leftColumns, final List<ColumnReference> rightColumns) {
-        // #TODO implement this
-        super(null, null, null);
-        throw new UnsupportedOperationException();
+        super(OperatorType.HASHJOIN, leftColumns, rightColumns);
     }
 
     /**
@@ -65,16 +63,32 @@ public class HashJoin extends AbstractPhysicalJoin {
      * {@code null}.
      */
     public HashJoin() {
-        // #TODO implement this
-        super(null);
-        throw new UnsupportedOperationException();
+        super(OperatorType.HASHJOIN);
     }
 
     @Override
     public Cost getLocalCost(final LogicalProperties localProperties,
                              final LogicalProperties... inputProperties) {
-        // #TODO implement this
-        throw new UnsupportedOperationException();
+        // Cardinalities
+        final double cardOut = localProperties.getCardinality();
+        final double cardLeft = inputProperties[0].getCardinality();
+        final double cardRight = inputProperties[1].getCardinality();
+        // Widths of tuples
+        final int widthLeft = ((LogicalCollectionProperties) inputProperties[0]).getSchema().getLength();
+        final int widthRight = ((LogicalCollectionProperties) inputProperties[1]).getSchema().getLength();
+        final double numLeft = Math.ceil((cardLeft * widthLeft) / DiskManager.PAGE_SIZE);
+        final double numRight = Math.ceil((cardRight * widthRight) / DiskManager.PAGE_SIZE);
+
+        // Calc costs for CPU
+        final double costCPU = CostModel.HASH_COST.getCost()
+                * (cardLeft + cardRight)
+                + CostModel.HASH_PROBE.getCost()
+                * Math.max(numLeft, numRight)
+                * Math.max(DiskManager.PAGE_SIZE / widthLeft, DiskManager.PAGE_SIZE / widthRight)
+                + cardOut * CostModel.TOUCH_COPY.getCost();
+        // Calc costs for I/O
+        final double costIO = 3 * (numLeft + numRight) * CostModel.IO_SEQ.getCost();
+        return new Cost(costIO, costCPU);
     }
 
     @Override
