@@ -54,6 +54,10 @@ public final class RuleManager {
      * the array of activated rules. Initially, all rules are activated.
      */
     public RuleManager() {
+        // Ex 1
+        this.addRule(new EquiJoinCommute());
+        // Ex 3
+        this.addRule(new EquiJoinToHashJoin());
         this.rules = new Rule[RuleType.values().length];
         this.addRule(new EquiJoinLeftToRight());
         this.addRule(new ProjectionThroughSelection());

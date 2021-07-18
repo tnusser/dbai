@@ -16,24 +16,32 @@ import minibase.query.optimizer.SearchContext;
 import minibase.query.optimizer.operators.Operator;
 import minibase.query.optimizer.operators.logical.EquiJoin;
 import minibase.query.optimizer.operators.physical.HashJoin;
+import minibase.query.schema.ColumnReference;
+
+import java.util.List;
 
 public class EquiJoinToHashJoin extends AbstractRule {
 
     public EquiJoinToHashJoin() {
-        // #TODO implement this
-        super(null, 0, null, null);
-        throw new UnsupportedOperationException();
+        super(RuleType.EQUI_TO_HASH_JOIN,
+                new Expression(new EquiJoin(), new Expression(new Leaf(0)), new Expression(new Leaf(1))),
+                new Expression(new HashJoin(), new Expression(new Leaf(0)), new Expression(new Leaf(1))));
     }
 
     @Override
     public Promise getPromise(final Operator operator, final SearchContext context) {
-        // #TODO implement this
-        throw new UnsupportedOperationException();
+        if (((EquiJoin) operator).getLeftColumns().size() == 0 ) {
+            return Promise.NONE;
+        } else if (((EquiJoin)operator).getRightColumns().size() == 0) {
+            return Promise.NONE;
+        }
+        return Promise.HASH;
     }
 
     @Override
     public Expression nextSubstitute(final Expression before, final PhysicalProperties requiredProperties) {
-        // #TODO implement this
-        throw new UnsupportedOperationException();
+        final EquiJoin equiJoin = (EquiJoin) before.getOperator();
+        return new Expression(new HashJoin(equiJoin.getLeftColumns(), equiJoin.getRightColumns()), before.getInput(0),
+                before.getInput(1));
     }
 }

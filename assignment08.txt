@@ -1,0 +1,7 @@
+Group 06 - Tobias Nusser, Andreas Bäuerle
+Overall Status 
+We implemented all of the programming exercises and did all of the writing exercises. However, at first, we couldnt get 
+Checkstyle to run, which is as we think of now desired by you.
+
+Time Spent 
+approx. 11 hrs per Person
